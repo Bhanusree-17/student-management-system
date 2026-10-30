@@ -7,6 +7,7 @@ const mysql = require("mysql2/promise");
 const path = require("path");
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -88,7 +89,120 @@ async function initializeDatabase() {
     console.log("Change ADMIN_PASSWORD before deploying publicly.");
   }
 }
+// Protected, one-time admin registration
+app.post("/api/signup", async (req, res) => {
+  let connection;
+  let lockAcquired = false;
 
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const signupSecret = String(req.body.signupSecret || "");
+
+    const expectedSecret = process.env.ADMIN_SIGNUP_SECRET;
+
+    if (!expectedSecret) {
+      return res.status(503).json({
+        message: "Admin signup is not configured."
+      });
+    }
+
+    if (!name || !email || !password || !signupSecret) {
+      return res.status(400).json({
+        message: "All fields are required."
+      });
+    }
+
+    if (name.length > 100 || email.length > 190) {
+      return res.status(400).json({
+        message: "Name or email is too long."
+      });
+    }
+
+    if (password.length < 12) {
+      return res.status(400).json({
+        message: "Password must be at least 12 characters."
+      });
+    }
+
+    if (signupSecret !== expectedSecret) {
+      return res.status(403).json({
+        message: "Invalid registration secret."
+      });
+    }
+
+    connection = await pool.getConnection();
+
+    const [lockRows] = await connection.query(
+      "SELECT GET_LOCK('student_management_admin_signup', 10) AS acquired"
+    );
+
+    lockAcquired = Number(lockRows[0].acquired) === 1;
+
+    if (!lockAcquired) {
+      return res.status(503).json({
+        message: "Signup is busy. Please try again."
+      });
+    }
+
+    const [admins] = await connection.query(
+      "SELECT id FROM admins LIMIT 1"
+    );
+
+    if (admins.length > 0) {
+      return res.status(403).json({
+        message: "Admin registration is already closed."
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const [result] = await connection.execute(
+      "INSERT INTO admins (name, email, password_hash) VALUES (?, ?, ?)",
+      [name, email, passwordHash]
+    );
+
+    req.session.adminId = result.insertId;
+    req.session.adminName = name;
+
+    return res.status(201).json({
+      message: "Admin account created successfully.",
+      admin: {
+        name,
+        email
+      }
+    });
+
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({
+        message: "This email is already registered."
+      });
+    }
+
+    console.error("Signup error:", error);
+
+    return res.status(500).json({
+      message: "Could not create admin account."
+    });
+
+  } finally {
+    if (connection) {
+      if (lockAcquired) {
+        try {
+          await connection.query(
+            "SELECT RELEASE_LOCK('student_management_admin_signup')"
+          );
+        } catch (error) {
+          console.error("Could not release signup lock.");
+        }
+      }
+
+      connection.release();
+    }
+  }
+});
 function requireAuth(req, res, next) {
   if (!req.session.adminId) {
     return res.status(401).json({ message: "Please log in first." });
@@ -149,16 +263,27 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    req.session.adminId = admin.id;
-    req.session.adminName = admin.name;
+    
+req.session.adminId = admin.id;
+req.session.adminName = admin.name;
 
-    res.json({
-      message: "Login successful.",
-      admin: {
-        name: admin.name,
-        email: admin.email
-      }
+req.session.save((error) => {
+  if (error) {
+    console.error("Session save error:", error);
+
+    return res.status(500).json({
+      message: "Could not save login session."
     });
+  }
+
+  res.json({
+    message: "Login successful.",
+    admin: {
+      name: admin.name,
+      email: admin.email
+    }
+  });
+});
 
   } catch (error) {
     console.error("Login error:", error);

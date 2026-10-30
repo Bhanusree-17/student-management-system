@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Management System</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main id="loginView" class="login-page">
+    <section class="login-card">
+      <div class="brand-mark">S</div>
+      <p class="eyebrow">STUDENT PORTAL</p>
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to manage student records.</p>
+      <form id="loginForm">
+        <label for="loginEmail">Email address</label>
+        <input id="loginEmail" type="email" autocomplete="username" placeholder="admin@example.com" required>
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+        <button class="primary full" type="submit">Sign in <span>→</span></button>
+        <p id="loginMessage" class="message"></p>
+      </form>
+      <p class="login-foot">Admin access · Student Management System</p>
+    </section>
+  </main>
+
+  <main id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark small">S</div><span>Student<span class="brand-light">Hub</span></span></div>
+      <p class="nav-label">MENU</p>
+      <button class="nav-item active" type="button"><span>▦</span> Dashboard</button>
+      <button class="nav-item" type="button" id="navStudents"><span>♙</span> Students</button>
+      <div class="sidebar-bottom">
+        <div class="admin-chip"><div class="avatar">A</div><div><strong id="adminName">Admin</strong><small>Administrator</small></div></div>
+        <button id="logoutBtn" class="logout"><span>↪</span> Log out</button>
+      </div>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">OVERVIEW</p><h1>Student dashboard</h1></div>
+        <div class="top-actions"><span class="online-dot"></span><span id="welcomeName">Admin</span><div class="avatar">A</div></div>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card"><div class="stat-icon purple">♙</div><p>Total students</p><strong id="totalCount">0</strong><small>Across all departments</small></article>
+        <article class="stat-card"><div class="stat-icon blue">▤</div><p>Departments</p><strong id="departmentCount">0</strong><small>Departments represented</small></article>
+        <article class="stat-card"><div class="stat-icon green">✓</div><p>Records</p><strong id="recordCount">0</strong><small>Student profiles stored</small></article>
+      </section>
+
+      <section class="content-card">
+        <div class="card-heading">
+          <div><h2>Student records</h2><p>Manage and organize your students.</p></div>
+          <button id="addStudentBtn" class="primary">＋ Add student</button>
+        </div>
+        <div class="filters">
+          <div class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Search name, roll number or email"></div>
+          <select id="departmentFilter" aria-label="Filter by department"><option value="all">All departments</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>STUDENT</th><th>ROLL NUMBER</th><th>DEPARTMENT</th><th>YEAR</th><th>SECTION</th><th>ACTIONS</th></tr></thead>
+            <tbody id="studentTable"><tr><td colspan="6" class="empty">Loading students...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="table-footer"><span id="tableSummary">Showing 0 students</span><span>StudentHub · Admin</span></div>
+      </section>
+      <p id="toast" class="toast"></p>
+    </section>
+  </main>
+
+  <dialog id="studentDialog">
+    <form id="studentForm" class="student-form">
+      <div class="dialog-heading"><div><p class="eyebrow">STUDENT PROFILE</p><h2 id="dialogTitle">Add student</h2></div><button type="button" id="closeDialog" class="close-btn">×</button></div>
+      <input type="hidden" id="studentId">
+      <div class="form-grid">
+        <div class="field"><label for="studentName">Full name *</label><input id="studentName" required maxlength="120"></div>
+        <div class="field"><label for="rollNumber">Roll number *</label><input id="rollNumber" required maxlength="50"></div>
+        <div class="field"><label for="studentEmail">Email</label><input id="studentEmail" type="email"></div>
+        <div class="field"><label for="studentPhone">Phone</label><input id="studentPhone" type="tel"></div>
+        <div class="field"><label for="studentDepartment">Department *</label><select id="studentDepartment" required><option value="">Select department</option><option>CSE</option><option>ECE</option><option>EEE</option><option>IT</option><option>Mechanical</option><option>Civil</option><option>AI &amp; ML</option><option>Data Science</option><option>Other</option></select></div>
+        <div class="field"><label for="studentYear">Year</label><select id="studentYear"><option value="">Select year</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></div>
+        <div class="field"><label for="studentGender">Gender</label><select id="studentGender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option></select></div>
+        <div class="field"><label for="studentSection">Section</label><input id="studentSection" maxlength="20" placeholder="e.g. A"></div>
+      </div>
+      <p id="formMessage" class="message"></p>
+      <div class="dialog-actions"><button type="button" id="cancelDialog" class="secondary">Cancel</button><button type="submit" class="primary">Save student</button></div>
+    </form>
+  </dialog>
+  <script src="/app.js"></script>
+</body>
+</html>
